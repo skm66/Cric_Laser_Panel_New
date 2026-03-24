@@ -22,7 +22,6 @@ const bluBtn = {
     '&:hover': { bgcolor: '#1565c0' }, minWidth: 32, minHeight: 32,
 };
 
-// Compact labeled number input
 const NF = ({ label, value, onChange }: { label?: string; value: number; onChange: (v: number) => void }) => (
     <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 90 }}>
         {label && <Typography variant="caption" color="text.secondary" sx={{ mb: 0.3, fontSize: 10 }}>{label}</Typography>}
@@ -35,7 +34,6 @@ const NF = ({ label, value, onChange }: { label?: string; value: number; onChang
     </Box>
 );
 
-// A rate section: Title + Min + Max + + - buttons
 const RateSection = ({ title, minVal, maxVal, onMin, onMax, onPlus, onMinus }: {
     title: string; minVal: number; maxVal: number;
     onMin: (v: number) => void; onMax: (v: number) => void;
@@ -144,7 +142,6 @@ const OddsManagementView = () => {
 
     return (
         <Box sx={{ p: 2, maxWidth: 640, mx: 'auto' }}>
-            {/* Back nav */}
             <Stack direction="row" alignItems="center" spacing={1} mb={1.5}>
                 <IconButton size="small" onClick={() => navigate('/odds')} sx={{ color: 'text.secondary' }}>
                     <ArrowBack fontSize="small" />
@@ -153,7 +150,6 @@ const OddsManagementView = () => {
                 {liveOdds && <Chip icon={<Wifi />} label="Live" color="success" size="small" />}
             </Stack>
 
-            {/* Match header + summary dropdowns */}
             <Paper elevation={2} sx={{ borderRadius: 2, p: 2, mb: 2 }}>
                 <Typography variant="subtitle1" fontWeight={700} mb={1.5}>
                     {matchHeader || `Match Number - M${matchId}`}
@@ -184,28 +180,24 @@ const OddsManagementView = () => {
                 <Box display="flex" justifyContent="center" py={4}><CircularProgress /></Box>
             ) : (
                 <Paper elevation={2} sx={{ borderRadius: 2, p: 2.5, mb: 2 }}>
-                    {/* Team A */}
                     <RateSection title={teamAName}
                         minVal={form.team1Min} maxVal={form.team1Max}
                         onMin={v => s('team1Min', v)} onMax={v => s('team1Max', v)}
                         onPlus={() => { bump('team1Min', 1); bump('team1Max', 1); }}
                         onMinus={() => { bump('team1Min', -1); bump('team1Max', -1); }} />
 
-                    {/* Team B */}
                     <RateSection title={teamBName}
                         minVal={form.team2Min} maxVal={form.team2Max}
                         onMin={v => s('team2Min', v)} onMax={v => s('team2Max', v)}
                         onPlus={() => { bump('team2Min', 1); bump('team2Max', 1); }}
                         onMinus={() => { bump('team2Min', -1); bump('team2Max', -1); }} />
 
-                    {/* Draw */}
                     <RateSection title="Draw"
                         minVal={form.drawMin ?? 0.01} maxVal={form.drawMax ?? 0.01}
                         onMin={v => s('drawMin', v)} onMax={v => s('drawMax', v)}
                         onPlus={() => { bump('drawMin', 1); bump('drawMax', 1); }}
                         onMinus={() => { bump('drawMin', -1); bump('drawMax', -1); }} />
 
-                    {/* Submit / Remove Rate */}
                     <Stack direction="row" spacing={1.5} mb={3}>
                         <Button variant="contained" disabled={saving} onClick={submit}
                             sx={{ bgcolor: '#1976d2', textTransform: 'none', px: 3, '&:hover': { bgcolor: '#1565c0' } }}>
@@ -219,7 +211,6 @@ const OddsManagementView = () => {
 
                     <Divider sx={{ mb: 2.5 }} />
 
-                    {/* Session Score */}
                     <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1, fontSize: 15 }}>Session Score</Typography>
                     <Stack direction="row" spacing={1.5} alignItems="flex-end" mb={1.5}>
                         <NF label="Over" value={form.overNumber ?? 0} onChange={v => s('overNumber', v)} />
@@ -243,7 +234,6 @@ const OddsManagementView = () => {
                         </Button>
                     </Stack>
 
-                    {/* Lambi */}
                     <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1, fontSize: 15 }}>Lambi</Typography>
                     <Stack direction="row" spacing={1.5} alignItems="flex-end">
                         <NF label="Min Score" value={form.lambiMin ?? 0} onChange={v => s('lambiMin', v)} />
@@ -258,7 +248,6 @@ const OddsManagementView = () => {
                 </Paper>
             )}
 
-            {/* History table */}
             {odds.length > 0 && (
                 <Paper elevation={1} sx={{ borderRadius: 2, overflow: 'hidden' }}>
                     <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>

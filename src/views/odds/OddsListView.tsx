@@ -1,17 +1,17 @@
-import {
-    Box, Typography, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, CircularProgress, Alert, Chip, Button, Paper
-} from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+    Box, Typography, Paper, Stack, Chip, CircularProgress,
+    Alert, Button, Divider
+} from '@mui/material';
+import { Casino, ArrowForward } from '@mui/icons-material';
 import oddsApi from '../../api/odds/odds.api';
 import { MatchWithOddsResponse } from '../../api/odds/types';
 
-const statusInfo = (s: string) => {
-    if (s === 'IN_PROGRESS') return { label: 'L', bg: '#4caf50' };
-    if (s === 'COMPLETED') return { label: 'F', bg: '#e53935' };
-    if (s === 'NOT_STARTED') return { label: 'NS', bg: '#757575' };
-    return { label: s.charAt(0), bg: '#757575' };
+const statusColor = (s: string): 'success' | 'warning' | 'default' => {
+    if (s === 'IN_PROGRESS' || s === 'LIVE') return 'success';
+    if (s === 'UPCOMING' || s === 'UP_COMING') return 'warning';
+    return 'default';
 };
 
 const OddsListView = () => {
@@ -20,122 +20,85 @@ const OddsListView = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => { load(); }, []);
-
-    const load = async () => {
-        setLoading(true);
-        try {
-            const res = await oddsApi.getAllMatches();
-            setMatches(res.data.data);
-            setError(null);
-        } catch (e: any) {
-            setError(e.response?.data?.message || 'Failed to load');
-        } finally { setLoading(false); }
-    };
+    useEffect(() => {
+        oddsApi.getAllMatches()
+            .then(res => setMatches(res.data.data || []))
+            .catch(e => setError(e.response?.data?.message || 'Failed to load matches'))
+            .finally(() => setLoading(false));
+    }, []);
 
     return (
-        <Box sx={{ p: 2 }}>
-            <Typography variant="h5" fontWeight={700} mb={2} color="text.primary">
-                Session Rooms
-            </Typography>
+        <Box>
+            <Stack direction="row" alignItems="center" spacing={1.5} mb={3}>
+                <Casino color="primary" />
+                <Typography variant="h5" fontWeight={700}>Odds Management</Typography>
+            </Stack>
 
             {loading && <Box display="flex" justifyContent="center" py={6}><CircularProgress /></Box>}
             {error && <Alert severity="error">{error}</Alert>}
 
-            {!loading && !error && (
-                <Paper elevation={2} sx={{ borderRadius: 2, overflow: 'hidden' }}>
-                    <TableContainer>
-                        <Table size="small">
-                            <TableHead>
-                                <TableRow sx={{ bgcolor: 'background.paper' }}>
-                                    {['Key', 'T1', 'T2', 'Format', 'Status', 'Order', 'UN', 'T1 Rate', 'T2 Rate', 'Draw', 'Session', 'Lambi', 'Time', 'Action'].map(h => (
-                                        <TableCell key={h} sx={{ fontWeight: 700, fontSize: 12, py: 1.5, whiteSpace: 'nowrap' }}>{h}</TableCell>
-                                    ))}
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {matches.map((m) => {
-                                    const st = statusInfo(m.matchStatus);
-                                    const isLive = m.matchStatus === 'IN_PROGRESS';
-                                    const hasOdds = m.hasOddsHistory;
-                                    return (
-                                        <TableRow
-                                            key={m.matchId}
-                                            hover
-                                            sx={{
-                                                bgcolor: isLive ? 'rgba(76,175,80,0.06)' : 'inherit',
-                                                '&:hover': { bgcolor: isLive ? 'rgba(76,175,80,0.1)' : 'action.hover' }
-                                            }}
-                                        >
-                                            <TableCell sx={{ fontWeight: 700, color: '#1565c0', fontSize: 13 }}>{m.matchKey}</TableCell>
-                                            <TableCell sx={{ fontSize: 13 }}>{m.teamA}</TableCell>
-                                            <TableCell sx={{ fontSize: 13 }}>{m.teamB}</TableCell>
-                                            <TableCell sx={{ fontSize: 12 }}>{m.format || 'T20'}</TableCell>
-                                            <TableCell>
-                                                <Chip label={st.label} size="small"
-                                                    sx={{ bgcolor: st.bg, color: '#fff', fontWeight: 700, height: 22, fontSize: 11, minWidth: 28 }} />
-                                            </TableCell>
-                                            <TableCell sx={{ fontSize: 12 }}>{m.orderNumber}</TableCell>
-                                            <TableCell sx={{ fontSize: 12, fontFamily: 'monospace' }}>{m.uniqueNumber}</TableCell>
-
-                                            {/* Inline odds values — shown after odds are set */}
-                                            <TableCell sx={{ fontSize: 12, color: hasOdds ? '#1565c0' : 'text.disabled' }}>
-                                                {hasOdds && m.latestTeam1Min != null
-                                                    ? `${m.latestTeam1Min} - ${m.latestTeam1Max}`
-                                                    : <Typography variant="caption" color="text.disabled">N/A</Typography>}
-                                            </TableCell>
-                                            <TableCell sx={{ fontSize: 12, color: hasOdds ? '#1565c0' : 'text.disabled' }}>
-                                                {hasOdds && m.latestTeam2Min != null
-                                                    ? `${m.latestTeam2Min} - ${m.latestTeam2Max}`
-                                                    : <Typography variant="caption" color="text.disabled">N/A</Typography>}
-                                            </TableCell>
-                                            <TableCell sx={{ fontSize: 12 }}>
-                                                {hasOdds && m.latestDrawMin != null
-                                                    ? `${m.latestDrawMin} - ${m.latestDrawMax}`
-                                                    : <Typography variant="caption" color="text.disabled">N/A</Typography>}
-                                            </TableCell>
-                                            <TableCell sx={{ fontSize: 12 }}>
-                                                {hasOdds && m.latestSessionMin != null
-                                                    ? `${m.latestSessionMin} - ${m.latestSessionMax}`
-                                                    : <Typography variant="caption" color="text.disabled">N/A</Typography>}
-                                            </TableCell>
-                                            <TableCell sx={{ fontSize: 12 }}>
-                                                {hasOdds && m.latestLambiMin != null
-                                                    ? `${m.latestLambiMin} - ${m.latestLambiMax}`
-                                                    : <Typography variant="caption" color="text.disabled">N/A</Typography>}
-                                            </TableCell>
-
-                                            <TableCell sx={{ fontSize: 11, color: 'text.secondary', whiteSpace: 'nowrap' }}>
-                                                {m.startTime
-                                                    ? new Date(m.startTime).toLocaleString('en-IN', {
-                                                        day: '2-digit', month: 'short', year: 'numeric',
-                                                        hour: '2-digit', minute: '2-digit'
-                                                    })
-                                                    : 'N/A'}
-                                            </TableCell>
-                                            <TableCell>
-                                                {isLive ? (
-                                                    <Button variant="contained" size="small"
-                                                        onClick={() => navigate(`/odds/${m.matchId}`)}
-                                                        sx={{
-                                                            bgcolor: '#1565c0', fontSize: 11, px: 1.5, py: 0.4,
-                                                            textTransform: 'none', whiteSpace: 'nowrap',
-                                                            '&:hover': { bgcolor: '#0d47a1' }
-                                                        }}>
-                                                        Set Session
-                                                    </Button>
-                                                ) : (
-                                                    <Typography variant="caption" color="text.disabled">N/A</Typography>
-                                                )}
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </Paper>
+            {!loading && !error && matches.length === 0 && (
+                <Alert severity="info">No matches available for odds management.</Alert>
             )}
+
+            <Stack spacing={2}>
+                {matches.map(m => (
+                    <Paper key={m.matchId} elevation={2} sx={{ p: 2.5, borderRadius: 2 }}>
+                        <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1}>
+                            <Box>
+                                <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
+                                    <Typography variant="subtitle1" fontWeight={700}>
+                                        {m.teamAFull || m.teamA} vs {m.teamBFull || m.teamB}
+                                    </Typography>
+                                    <Chip label={m.matchStatus} size="small" color={statusColor(m.matchStatus)} />
+                                    {m.hasOddsHistory && (
+                                        <Chip label="Has Odds" size="small" color="primary" variant="outlined" />
+                                    )}
+                                </Stack>
+                                <Typography variant="body2" color="text.secondary">
+                                    {m.tournament} &nbsp;·&nbsp; {m.format} &nbsp;·&nbsp; {m.uniqueNumber || `M${m.matchId}`}
+                                </Typography>
+                                {m.hasOddsHistory && (
+                                    <>
+                                        <Divider sx={{ my: 1 }} />
+                                        <Stack direction="row" spacing={2} flexWrap="wrap">
+                                            {m.latestTeam1Min != null && (
+                                                <Typography variant="caption" color="text.secondary">
+                                                    T1: <b>{m.latestTeam1Min} – {m.latestTeam1Max}</b>
+                                                </Typography>
+                                            )}
+                                            {m.latestTeam2Min != null && (
+                                                <Typography variant="caption" color="text.secondary">
+                                                    T2: <b>{m.latestTeam2Min} – {m.latestTeam2Max}</b>
+                                                </Typography>
+                                            )}
+                                            {m.latestDrawMin != null && (
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Draw: <b>{m.latestDrawMin} – {m.latestDrawMax}</b>
+                                                </Typography>
+                                            )}
+                                            {m.latestSessionMin != null && (
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Session: <b>{m.latestSessionMin} – {m.latestSessionMax}</b>
+                                                </Typography>
+                                            )}
+                                        </Stack>
+                                    </>
+                                )}
+                            </Box>
+                            <Button
+                                variant="contained"
+                                size="small"
+                                endIcon={<ArrowForward />}
+                                onClick={() => navigate(`/odds/${m.matchId}`)}
+                                sx={{ textTransform: 'none', minWidth: 120 }}
+                            >
+                                Manage Odds
+                            </Button>
+                        </Stack>
+                    </Paper>
+                ))}
+            </Stack>
         </Box>
     );
 };
