@@ -22,22 +22,11 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Verify required secrets are set
-        run: |
-          if [ -z "${{ secrets.REACT_APP_URL_API }}" ]; then
-            echo "ERROR: REACT_APP_URL_API secret is not set. Pipeline aborted."
-            exit 1
-          fi
-          if [ -z "${{ secrets.REACT_APP_WEB_SOCKET_URL }}" ]; then
-            echo "ERROR: REACT_APP_WEB_SOCKET_URL secret is not set. Pipeline aborted."
-            exit 1
-          fi
-          echo "Secrets verified. API URL: ${{ secrets.REACT_APP_URL_API }}"
-
       - name: Create .env file
         run: |
           echo "REACT_APP_URL_API=${{ secrets.REACT_APP_URL_API }}" > .env
           echo "REACT_APP_WEB_SOCKET_URL=${{ secrets.REACT_APP_WEB_SOCKET_URL }}" >> .env
+          cat .env
 
       - name: Build
         run: CI=false npm run build
