@@ -32,15 +32,12 @@ jobs:
             echo "ERROR: REACT_APP_WEB_SOCKET_URL secret is not set. Pipeline aborted."
             exit 1
           fi
-          echo "Secrets verified."
-          echo "API URL points to: ${{ secrets.REACT_APP_URL_API }}"
+          echo "Secrets verified. API URL: ${{ secrets.REACT_APP_URL_API }}"
 
       - name: Create .env file
         run: |
           echo "REACT_APP_URL_API=${{ secrets.REACT_APP_URL_API }}" > .env
           echo "REACT_APP_WEB_SOCKET_URL=${{ secrets.REACT_APP_WEB_SOCKET_URL }}" >> .env
-          echo "--- .env written ---"
-          cat .env
 
       - name: Build
         run: CI=false npm run build
@@ -60,87 +57,6 @@ jobs:
             --exclude "index.html"
           aws s3 cp build/index.html s3://${{ secrets.S3_BUCKET_NAME }}/index.html \
             --cache-control "no-cache"
-
-      # Add /api/* and /live-match origin pointing to EC2 on CloudFront
-      # so HTTPS frontend can reach HTTP backend without mixed-content errors
-      - name: Configure CloudFront API origin and behaviors
-        run: |
-          EC2_HOST="${{ secrets.EC2_HOST }}"
-          DIST_ID="${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}"
-
-          # Get current distribution config
-          aws cloudfront get-distribution-config --id "$DIST_ID" > dist_config_full.json
-          ETAG=$(jq -r '.ETag' dist_config_full.json)
-          jq '.DistributionConfig' dist_config_full.json > dist_config.json
-
-          # Check if EC2 origin already exists
-          ORIGIN_EXISTS=$(jq --arg ec2 "$EC2_HOST" \
-            '[.Origins.Items[] | select(.DomainName == $ec2)] | length' dist_config.json)
-
-          if [ "$ORIGIN_EXISTS" -eq "0" ]; then
-            echo "Adding EC2 origin to CloudFront..."
-
-            # Add EC2 as a new origin
-            jq --arg ec2 "$EC2_HOST" '
-              .Origins.Quantity += 1 |
-              .Origins.Items += [{
-                "Id": "EC2Backend",
-                "DomainName": $ec2,
-                "CustomOriginConfig": {
-                  "HTTPPort": 8080,
-                  "HTTPSPort": 443,
-                  "OriginProtocolPolicy": "http-only",
-                  "OriginSSLProtocols": {"Quantity": 1, "Items": ["TLSv1.2"]},
-                  "OriginReadTimeout": 30,
-                  "OriginKeepaliveTimeout": 5
-                },
-                "OriginPath": "",
-                "CustomHeaders": {"Quantity": 0, "Items": []},
-                "ConnectionAttempts": 3,
-                "ConnectionTimeout": 10,
-                "OriginShield": {"Enabled": false}
-              }]
-            ' dist_config.json > dist_config_updated.json
-
-            # Add /api/* cache behavior
-            jq '
-              .CacheBehaviors.Quantity += 1 |
-              .CacheBehaviors.Items = [{
-                "PathPattern": "/api/*",
-                "TargetOriginId": "EC2Backend",
-                "ViewerProtocolPolicy": "redirect-to-https",
-                "AllowedMethods": {
-                  "Quantity": 7,
-                  "Items": ["GET","HEAD","OPTIONS","PUT","POST","PATCH","DELETE"],
-                  "CachedMethods": {"Quantity": 2, "Items": ["GET","HEAD"]}
-                },
-                "ForwardedValues": {
-                  "QueryString": true,
-                  "Cookies": {"Forward": "none"},
-                  "Headers": {"Quantity": 3, "Items": ["Authorization","Content-Type","Accept"]}
-                },
-                "MinTTL": 0,
-                "DefaultTTL": 0,
-                "MaxTTL": 0,
-                "Compress": false,
-                "SmoothStreaming": false,
-                "TrustedSigners": {"Enabled": false, "Quantity": 0},
-                "TrustedKeyGroups": {"Enabled": false, "Quantity": 0},
-                "LambdaFunctionAssociations": {"Quantity": 0},
-                "FunctionAssociations": {"Quantity": 0},
-                "FieldLevelEncryptionId": ""
-              }] + .CacheBehaviors.Items
-            ' dist_config_updated.json > dist_config_final.json
-
-            aws cloudfront update-distribution \
-              --id "$DIST_ID" \
-              --if-match "$ETAG" \
-              --distribution-config file://dist_config_final.json
-
-            echo "CloudFront updated with EC2 backend origin for /api/*"
-          else
-            echo "EC2 origin already exists in CloudFront, skipping origin update."
-          fi
 
       - name: Invalidate CloudFront cache
         run: |
