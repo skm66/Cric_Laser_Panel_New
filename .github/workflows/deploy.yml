@@ -20,18 +20,12 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci
 
       - name: Create .env file
         run: |
-          # Use secret if set, otherwise keep the .env from repo
-          if [ -n "${{ secrets.REACT_APP_URL_API }}" ]; then
-            echo "REACT_APP_URL_API=${{ secrets.REACT_APP_URL_API }}" > .env
-            echo "REACT_APP_WEB_SOCKET_URL=${{ secrets.REACT_APP_WEB_SOCKET_URL }}" >> .env
-          fi
-          echo "--- Building with .env ---"
-          cat .env
-
+          echo "REACT_APP_URL_API=${{ secrets.REACT_APP_URL_API }}" > .env
+          echo "REACT_APP_WEB_SOCKET_URL=${{ secrets.REACT_APP_WEB_SOCKET_URL }}" >> .env
       - name: Build
         run: CI=false npm run build
 
@@ -50,7 +44,6 @@ jobs:
             --exclude "index.html"
           aws s3 cp build/index.html s3://${{ secrets.S3_BUCKET_NAME }}/index.html \
             --cache-control "no-cache"
-
       - name: Invalidate CloudFront cache
         run: |
           aws cloudfront create-invalidation \
