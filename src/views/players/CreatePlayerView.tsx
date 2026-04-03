@@ -105,7 +105,7 @@ const CreatePlayerPage: React.FC<CreatePlayerPageProps> = ({ playerInfo }) => {
         setLoading(false);
       }
     },
-    [values, isEditMode, playerInfo]
+    [values, isEditMode, playerInfo,isFormValid]
   );
 
   const renderTextField = (name: keyof CreatePlayerRequest, label: string) => (
