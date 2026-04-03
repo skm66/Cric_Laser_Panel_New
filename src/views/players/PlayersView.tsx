@@ -101,7 +101,7 @@ const ManagePlayersPage = () => {
                 Manage Players
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                View, search, and manage your player databasesss
+                View, search, and manage your player database
               </Typography>
             </Box>
 
