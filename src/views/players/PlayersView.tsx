@@ -98,7 +98,7 @@ const ManagePlayersPage = () => {
           >
             <Box>
               <Typography variant="h4" fontWeight="800" sx={{ letterSpacing: -0.5 }}>
-                Manage Players
+                Manage Playerss
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                 View, search, and manage your player database
