@@ -168,7 +168,7 @@ const CreateMatchPage: React.FC<CreateMatchPageProps> = ({ matchInfo }) => {
         } else {
           setTeams(tournamentData.participatingTeams ?? []);
         }
-console.log("ugd")
+
         // extract hosting nations (if available on tournament object)
         const hostingNations: string[] = Array.isArray(tournamentData.hostingNations)
           ? tournamentData.hostingNations
