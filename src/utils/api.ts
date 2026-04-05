@@ -34,5 +34,5 @@ axiosInstance.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
+console.log("df")
 export default axiosInstance;
