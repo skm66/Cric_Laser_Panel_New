@@ -1,4 +1,4 @@
-name: Deploy Frontend to S3
+name: Deploy Frontend to EC2 (Nginx)
 
 on:
   push:
@@ -10,42 +10,64 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ----------------------------
+      # 1. Checkout
+      # ----------------------------
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # ----------------------------
+      # 2. Setup Node
+      # ----------------------------
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
 
+      # ----------------------------
+      # 3. Install deps
+      # ----------------------------
       - name: Install dependencies
         run: npm ci
 
+      # ----------------------------
+      # 4. Create .env
+      # ----------------------------
       - name: Create .env file
         run: |
           echo "REACT_APP_URL_API=${{ secrets.REACT_APP_URL_API }}" > .env
           echo "REACT_APP_WEB_SOCKET_URL=${{ secrets.REACT_APP_WEB_SOCKET_URL }}" >> .env
+
+      # ----------------------------
+      # 5. Build React app
+      # ----------------------------
       - name: Build
         run: CI=false npm run build
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      # ----------------------------
+      # 6. Copy build to EC2
+      # ----------------------------
+      - name: Copy build to EC2
+        uses: appleboy/scp-action@v0.1.7
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-south-1
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          source: "build/*"
+          target: "/var/www/criclaser-frontend"
+          strip_components: 1
 
-      - name: Sync build to S3
-        run: |
-          aws s3 sync build/ s3://${{ secrets.S3_BUCKET_NAME }} \
-            --delete \
-            --cache-control "max-age=31536000" \
-            --exclude "index.html"
-          aws s3 cp build/index.html s3://${{ secrets.S3_BUCKET_NAME }}/index.html \
-            --cache-control "no-cache"
-      - name: Invalidate CloudFront cache
-        run: |
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
-            --paths "/*"
+      # ----------------------------
+      # 7. Reload Nginx (optional but safe)
+      # ----------------------------
+      - name: Reload Nginx
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          script: |
+            sudo chown -R www-data:www-data /var/www/criclaser-frontend
+            sudo chmod -R 755 /var/www/criclaser-frontend
+            sudo systemctl reload nginx
