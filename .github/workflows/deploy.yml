@@ -46,7 +46,7 @@ jobs:
         run: CI=false npm run build
 
       # ----------------------------
-      # 6. Copy build to EC2
+      # 6. Copy build to EC2 (TEMP DIR)
       # ----------------------------
       - name: Copy build to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -55,19 +55,22 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           source: "build/*"
-          target: "/var/www/criclaser-frontend"
+          target: "/tmp/criclaser-frontend"
           strip_components: 1
 
       # ----------------------------
-      # 7. Reload Nginx (optional but safe)
+      # 7. Move to Nginx directory
       # ----------------------------
-      - name: Reload Nginx
+      - name: Deploy to Nginx folder
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
+            sudo mkdir -p /var/www/criclaser-frontend
+            sudo rm -rf /var/www/criclaser-frontend/*
+            sudo cp -r /tmp/criclaser-frontend/* /var/www/criclaser-frontend/
             sudo chown -R www-data:www-data /var/www/criclaser-frontend
             sudo chmod -R 755 /var/www/criclaser-frontend
             sudo systemctl reload nginx
