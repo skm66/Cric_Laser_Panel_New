@@ -4,6 +4,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
   List, ListItem, ListItemText, ListItemIcon, Checkbox, Avatar, Divider, Chip, Alert
 } from "@mui/material";
+import DeleteIcon from '@mui/icons-material/Delete';
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent
 } from "@dnd-kit/core";
@@ -58,7 +59,8 @@ function SortableItem({
   isWicketKeeper,
   onSetCaptain,
   onSetViceCaptain,
-  onSetWicketKeeper
+  onSetWicketKeeper,
+  onDelete
 }: {
   player: Player;
   isCaptain: boolean;
@@ -67,6 +69,7 @@ function SortableItem({
   onSetCaptain: () => void;
   onSetViceCaptain: () => void;
   onSetWicketKeeper: () => void;
+  onDelete?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: player.id });
 
@@ -143,7 +146,18 @@ function SortableItem({
             borderColor: isViceCaptain ? 'success.main' : 'text.disabled'
           }}
         />
+        {onDelete && (
+          <DeleteIcon
+            fontSize="small"
+            color="error"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            style={{ cursor: "pointer" }}
+          />
 
+        )}
         <Box
           onClick={(e) => {
             e.stopPropagation();
@@ -401,6 +415,9 @@ export default function TeamSelection(props: Props) {
                       onSetCaptain={() => setCaptain(p.id, team)}
                       onSetViceCaptain={() => setViceCaptain(p.id, team)}
                       onSetWicketKeeper={() => setWicketKeeper(p.id, team)}
+                      onDelete={() => {
+                        setSelected(selected.filter(x => x.id !== p.id))
+                      }}
                     />
                   ))}
                 </Stack>
@@ -421,6 +438,9 @@ export default function TeamSelection(props: Props) {
                       onSetCaptain={() => { }}
                       onSetViceCaptain={() => { }}
                       onSetWicketKeeper={() => { }}
+                      onDelete={() => {
+                        setBench(bench.filter(x => x.id !== p.id))
+                      }}
                     />
                   ))}
                 </Stack>
