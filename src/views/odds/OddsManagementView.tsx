@@ -8,6 +8,8 @@ import { Add, Remove, ArrowBack, Wifi } from '@mui/icons-material';
 import oddsApi from '../../api/odds/odds.api';
 import { OddsHistoryRequest, OddsHistoryResponse } from '../../api/odds/types';
 import { useWebSocketSubscription } from '../../hooks/useWebSocketSubscription';
+import {Client} from "@stomp/stompjs";
+import SockJS from "sockjs-client";
 
 const STEP = 0.01;
 
@@ -64,19 +66,66 @@ const OddsManagementView = () => {
     const [teamBName, setTeamBName] = useState('Team 2');
     const [matchHeader, setMatchHeader] = useState('');
 
-    useWebSocketSubscription<OddsHistoryResponse>({
-        endpoint: process.env.REACT_APP_WEB_SOCKET_URL || 'http://localhost:8080/live-match',
-        topic: `/topic/odds/${matchId}`,
-        onMessage: useCallback((data: OddsHistoryResponse) => {
-            setLiveOdds(data);
-            setOdds(prev => {
-                const exists = prev.find(o => o.id === data.id);
-                return exists ? prev.map(o => o.id === data.id ? data : o) : [data, ...prev];
-            });
-        }, []),
-    });
+    // useWebSocketSubscription<OddsHistoryResponse>({
+    //     endpoint: process.env.REACT_APP_WEB_SOCKET_URL || 'http://localhost:8080/live-match',
+    //     topic: `/topic/odds/${matchId}`,
+    //     onMessage: useCallback((data: OddsHistoryResponse) => {
+    //         console.log(data)
+    //         setLiveOdds(data);
+    //         setOdds(prev => {
+    //             const exists = prev.find(o => o.id === data.id);
+    //             return exists ? prev.map(o => o.id === data.id ? data : o) : [data, ...prev];
+    //         });
+    //     }, []),
+    // });
+    const connectWS = (matchId: string, onMessage: { (data: any): void; (arg0: any): void; }) => {
+        const wsUrl = process.env.REACT_APP_WEB_SOCKET_URL || 'http://localhost:8080/live-match';
+        const socket = new SockJS(wsUrl);
 
-    useEffect(() => { if (matchId) load(); }, [matchId]); // eslint-disable-line react-hooks/exhaustive-deps
+        const client = new Client({
+            webSocketFactory: () => socket,
+
+            onConnect: () => {
+                console.log("Connected");
+
+                client.subscribe(`/topic/odds/${matchId}`, (message: { body: string; }) => {
+                    const data = JSON.parse(message.body);
+                    console.log("WS DATA:", data);
+                    onMessage(data);
+                });
+            },
+
+            onStompError: (frame: any) => {
+                console.error("STOMP error", frame);
+            }
+        });
+
+        client.activate();
+
+        return () => client.deactivate();
+    };
+    useEffect(() => {
+        if (!matchId) return;
+
+        const disconnect = connectWS(matchId, (data) => {
+            console.log("WS RECEIVED:", data);
+
+            setLiveOdds(data);
+setOdds(data)
+            // setOdds(prev => {
+            //     const exists = prev.find(o => o.id === data.id);
+            //     return exists
+            //       ? prev.map(o => o.id === data.id ? data : o)
+            //       : [data, ...prev];
+            // });
+        });
+
+        return () => {
+            disconnect && disconnect();
+        };
+    }, [matchId]);
+    console.log(liveOdds)
+    useEffect(() => { if (matchId) load(); }, [matchId]);
 
     const load = async () => {
         setLoading(true);
@@ -147,6 +196,11 @@ const OddsManagementView = () => {
                     <ArrowBack fontSize="small" />
                 </IconButton>
                 <Typography variant="body2" color="text.secondary">Session Rooms</Typography>
+                <Typography variant="body2" color="text.secondary">{liveOdds?.team1Min}</Typography>
+                <Typography variant="body2" color="text.secondary">{liveOdds?.team1Max}</Typography>
+                <Typography variant="body2" color="text.secondary">{liveOdds?.team2Min}</Typography>
+                <Typography variant="body2" color="text.secondary">{liveOdds?.tea21Max}</Typography>
+
                 {liveOdds && <Chip icon={<Wifi />} label="Live" color="success" size="small" />}
             </Stack>
 
@@ -156,8 +210,8 @@ const OddsManagementView = () => {
                 </Typography>
                 <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
                     {[
-                        { label: 'Team 1', val: form.team1Min },
-                        { label: 'Team 2', val: form.team2Min },
+                        { label: 'Team 1', val: liveOdds ? `${liveOdds.team1Min} - ${liveOdds.team1Max}` : form.team1Min },
+                        { label: 'Team 2', val: liveOdds ? `${liveOdds.team2Min} - ${liveOdds.team2Max}` : form.team2Min },
                         { label: 'Draw', val: form.drawMin ?? 0.01 },
                         { label: 'Session', val: form.sessionMin ?? 1 },
                         { label: 'Lambi', val: form.lambiMin ?? 1 },
