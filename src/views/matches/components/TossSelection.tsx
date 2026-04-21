@@ -110,7 +110,7 @@ const TossSelection: React.FC<Props> = ({ match, teamA, teamB, onMatchStarted })
       });
       const token = localStorage.getItem("authToken");
 
-      await fetch(`http://localhost:8080/scheduler/start?matchId=${match.id}&apiMatchId=${input}`, {
+      await fetch(`https://criclaser.developerport.tech/scheduler/start?matchId=${match.id}&apiMatchId=${input}`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,

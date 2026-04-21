@@ -207,7 +207,7 @@ setOdds(data)
                   //         "Content-Type": "application/json"
                   //     }
                   // });
-                  await fetch(`http://localhost:8080/scheduler/start?matchId=${matchId}&apiMatchId=${apiId}`, {
+                  await fetch(`https://criclaser.developerport.tech/scheduler/start?matchId=${matchId}&apiMatchId=${apiId}`, {
                       method: "POST",
                       headers: {
                           "Authorization": `Bearer ${token}`,
@@ -224,7 +224,7 @@ setOdds(data)
               color="error"
               onClick={async () => {
                   const token = localStorage.getItem("authToken");
-                  await fetch(`http://localhost:8080/scheduler/stop`, {
+                  await fetch(`https://criclaser.developerport.tech/scheduler/stop`, {
                       method: "POST",
                       headers: {
                           "Authorization": `Bearer ${token}`,
