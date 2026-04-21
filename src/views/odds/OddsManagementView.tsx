@@ -191,6 +191,51 @@ setOdds(data)
 
     return (
         <Box sx={{ p: 2, maxWidth: 640, mx: 'auto' }}>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={async () => {
+                  const apiId = prompt("Enter API Match ID (e.g. 35499236)");
+
+                  if (!apiId) return;
+                  const token = localStorage.getItem("authToken");
+
+                  // await fetch(`http://localhost:8080/scheduler/start?matchId=${match.id}&apiMatchId=${input}`, {
+                  //     method: "POST",
+                  //     headers: {
+                  //         "Authorization": `Bearer ${token}`,
+                  //         "Content-Type": "application/json"
+                  //     }
+                  // });
+                  await fetch(`http://localhost:8080/scheduler/start?matchId=${matchId}&apiMatchId=${apiId}`, {
+                      method: "POST",
+                      headers: {
+                          "Authorization": `Bearer ${token}`,
+                          "Content-Type": "application/json"
+                      }
+                  });
+              }}
+            >
+                Start Script
+            </Button>
+
+            <Button
+              variant="contained"
+              color="error"
+              onClick={async () => {
+                  const token = localStorage.getItem("authToken");
+                  await fetch(`http://localhost:8080/scheduler/stop`, {
+                      method: "POST",
+                      headers: {
+                          "Authorization": `Bearer ${token}`,
+                          "Content-Type": "application/json"
+                      }
+                  });
+                  // await fetch(`/scheduler/stop`, { method: "POST" });
+              }}
+            >
+                Stop Script
+            </Button>
             <Stack direction="row" alignItems="center" spacing={1} mb={1.5}>
                 <IconButton size="small" onClick={() => navigate('/odds')} sx={{ color: 'text.secondary' }}>
                     <ArrowBack fontSize="small" />

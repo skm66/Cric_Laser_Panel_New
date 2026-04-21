@@ -63,6 +63,7 @@ const TossSelection: React.FC<Props> = ({ match, teamA, teamB, onMatchStarted })
   const [tossConfirmOpen, setTossConfirmOpen] = useState(false);
   const [pendingTossWinner, setPendingTossWinner] = useState<TeamInfo | undefined>();
   const [pendingElectedTo, setPendingElection] = useState<"bat" | "bowl">("bat");
+  const [apiMatchId, setApiMatchId] = useState("");
 
   useEffect(() => {
     if (teamA?.players) {
@@ -89,6 +90,10 @@ const TossSelection: React.FC<Props> = ({ match, teamA, teamB, onMatchStarted })
     try {
       if (!tossWinnerTeamId) throw new Error("Select Toss Winner");
       setLoading(true);
+      const input = prompt("Enter API Match ID (e.g. 35499236)");
+      if (!input) return;
+
+      setApiMatchId(input);
       await MatchApi.createMatch({
         matchId: match.id,
         teamAPlayers: selectedPlayersA.map((p) => p.id),
@@ -103,6 +108,16 @@ const TossSelection: React.FC<Props> = ({ match, teamA, teamB, onMatchStarted })
         electedTo,
         overs: match.totalOvers,
       });
+      const token = localStorage.getItem("authToken");
+
+      await fetch(`http://localhost:8080/scheduler/start?matchId=${match.id}&apiMatchId=${input}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+
       onMatchStarted();
     } catch (err: any) {
       const msg = err.response?.data?.message || err.message || "Failed to start match";
