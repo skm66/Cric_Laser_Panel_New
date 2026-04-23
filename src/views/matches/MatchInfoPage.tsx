@@ -40,6 +40,7 @@ import VenueScoringPatternCard from "./components/VenueScoring";
 import VenueScoringForm from "../venue/ScoringPtternFrom";
 import MatchApi from "../../api/ball_user/MatchApi";
 import { MatchResult as MatchResultType } from "../../api/ball_user/types";
+import RecentForm from "./components/RecentForm";
 
 const MatchInfoPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -193,7 +194,7 @@ const MatchInfoPage: React.FC = () => {
       alert("Failed to restart match.");
     }
   };
-
+console.log(match)
   const handleWeatherSubmit = async (data: WeatherInfoRequest) => {
     setWeatherLoading(true);
     try {
@@ -303,7 +304,27 @@ const MatchInfoPage: React.FC = () => {
             )}
           </Grid>
         </Grid>
+        <Card>
+          <CardContent>
+            <Stack spacing={2}>
+              <Typography variant="h6" fontWeight="bold">
+                Recent Form
+              </Typography>
 
+              <Stack direction="row" justifyContent="space-between">
+                <RecentForm
+                  title={match.teamA.teamName}
+                  form={match.teamARecentForm}
+                />
+
+                <RecentForm
+                  title={match.teamB.teamName}
+                  form={match.teamBRecentForm}
+                />
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
         {/* Tips Section */}
         <Card>
           <CardContent>
