@@ -288,6 +288,13 @@ const MatchInfoPage: React.FC = () => {
     );
   }
 
+  const shouldShowMatchResult =
+    match.tossWinner || (
+      (match.matchStatus === 'COMPLETED' || match.matchStatus === 'CANCELLED') &&
+      match.winningTeam !== null &&
+      match.winningTeam !== undefined
+    );
+
   return (
     <Box sx={{ minHeight: "100vh", py: 3, px: 2 }}>
       <Box
@@ -344,7 +351,7 @@ const MatchInfoPage: React.FC = () => {
           </CardContent>
         </Card>
         {/* Post-Match Result */}
-        {(match.tossWinner || (match.winningTeam !== null && match.winningTeam !== undefined)) && (
+        {shouldShowMatchResult && (
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>

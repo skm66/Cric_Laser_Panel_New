@@ -93,7 +93,7 @@ const CreateMatchPage: React.FC<CreateMatchPageProps> = ({ matchInfo }) => {
   const { formState, onFieldChange, fieldGetError, fieldHasError, isFormValid } = useAppForm({
     validationSchema: VALIDATE_MATCH_FORM,
     initialValues: {
-      matchId: matchInfo?.id || 0,
+      matchId: matchInfo?.id || null,
       tournamentId: matchInfo?.tournamentId || 0,
       teamAId: matchInfo?.teamA?.teamId || 0,
       teamBId: matchInfo?.teamB?.teamId || 0,
@@ -101,7 +101,7 @@ const CreateMatchPage: React.FC<CreateMatchPageProps> = ({ matchInfo }) => {
       endTime: matchInfo?.endTime || dayjs().add(3, 'hour').valueOf(),
       status: matchInfo?.matchStatus || 'UPCOMING',
       totalOvers: matchInfo?.totalOvers || '',
-      venueId: matchInfo?.venueId || 0,
+      venueId: matchInfo?.venueId || null,
       groundUmpire1: matchInfo?.groundUmpire1 || '',
       groundUmpire2: matchInfo?.groundUmpire2 || '',
       thirdUmpire: matchInfo?.thirdUmpire || '',
@@ -284,6 +284,8 @@ const CreateMatchPage: React.FC<CreateMatchPageProps> = ({ matchInfo }) => {
           startTime: typeof values.startTime === 'string' ? dayjs(values.startTime).valueOf() : values.startTime,
           endTime: typeof values.endTime === 'string' ? dayjs(values.endTime).valueOf() : values.endTime,
           totalOvers: Number(values.totalOvers),
+          matchId: values.matchId || null,
+          venueId: values.venueId || null,
         };
 
         await matchService.saveMatch(payload);
@@ -412,12 +414,12 @@ const CreateMatchPage: React.FC<CreateMatchPageProps> = ({ matchInfo }) => {
                       // if a venue was previously selected but not in the new list, clear it
                       const newVenue = venues.find(v => v.id === values.venueId);
                       if (!newVenue) {
-                        onFieldChange({ target: { name: 'venueId', value: 0 } } as any);
+                        onFieldChange({ target: { name: 'venueId', value: null } } as any);
                       }
                     } else {
                       // cleared selection: reset venues to empty or initial
                       setVenues([]);
-                      onFieldChange({ target: { name: 'venueId', value: 0 } } as any);
+                      onFieldChange({ target: { name: 'venueId', value: null } } as any);
                     }
                   }}
                   disabled={availableHostingNations.length === 0}
@@ -439,7 +441,7 @@ const CreateMatchPage: React.FC<CreateMatchPageProps> = ({ matchInfo }) => {
                   value={venues.find((v) => v.id === values.venueId) || null}
                   onChange={(_, newValue) => {
                     onFieldChange({
-                      target: { name: 'venueId', value: newValue ? newValue.id : 0 },
+                      target: { name: 'venueId', value: newValue ? newValue.id : null },
                     } as any);
                   }}
                   renderInput={(params) => (

@@ -1,12 +1,12 @@
 export type MatchRequest = {
-  matchId: number;
+  matchId?: number | null;
   tournamentId: number;
   teamAId: number;
   totalOvers: number;
   teamBId: number;
   startTime: number;
   endTime: number;
-  venueId: number;
+  venueId?: number | null;
   groundUmpire1?: string;
   groundUmpire2?: string;
   thirdUmpire?: string;
