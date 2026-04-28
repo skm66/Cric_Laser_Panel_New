@@ -4,15 +4,17 @@ import {
   Card,
   CardContent,
   CircularProgress,
-  Divider,
   Stack,
   Typography,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  AppBar,
   Grid,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
 } from "@mui/material";
 import { useParams, Link } from "react-router-dom";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
@@ -59,13 +61,16 @@ const MatchInfoPage: React.FC = () => {
 
   const [venueScoringPattern, setVenueScoringPattern] = useState<VenueScoringDto | undefined>();
 
-  const [_, dispatch] = useAppStore();
+  const [, dispatch] = useAppStore();
   const matchService = useRef(new MatchService(dispatch)).current;
   const tipService = useRef(new TipService(dispatch)).current;
   const venueService = useRef(new VenueService()).current;
 
   const [openScoringModal, setOpenScoringModal] = useState(false);
   const [liveMatchData, setLiveMatchData] = useState<MatchResultType | null>(null);
+  const [finishOpen, setFinishOpen] = useState(false);
+  const [finishWinner, setFinishWinner] = useState(0);
+  const [matchActionLoading, setMatchActionLoading] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -194,7 +199,56 @@ const MatchInfoPage: React.FC = () => {
       alert("Failed to restart match.");
     }
   };
-console.log(match)
+
+  const refreshMatchAfterAction = async () => {
+    await fetchMatch();
+  };
+
+  const handleFinishMatch = async () => {
+    if (!match) return;
+    setMatchActionLoading(true);
+    try {
+      await matchService.finishMatch(match.id, finishWinner);
+      setFinishOpen(false);
+      await refreshMatchAfterAction();
+      alert("Match has been finished.");
+    } catch (err) {
+      alert("Failed to finish match.");
+    } finally {
+      setMatchActionLoading(false);
+    }
+  };
+
+  const handlePauseMatch = async () => {
+    if (!match) return;
+    if (!window.confirm("Are you sure you want to pause the match?")) return;
+    setMatchActionLoading(true);
+    try {
+      await matchService.pauseMatch(match.id);
+      await refreshMatchAfterAction();
+      alert("Match has been paused.");
+    } catch (err) {
+      alert("Failed to pause match.");
+    } finally {
+      setMatchActionLoading(false);
+    }
+  };
+
+  const handleCancelMatch = async () => {
+    if (!match) return;
+    if (!window.confirm("Are you sure you want to cancel the match?")) return;
+    setMatchActionLoading(true);
+    try {
+      await matchService.cancelMatch(match.id);
+      await refreshMatchAfterAction();
+      alert("Match has been cancelled.");
+    } catch (err) {
+      alert("Failed to cancel match.");
+    } finally {
+      setMatchActionLoading(false);
+    }
+  };
+
   const handleWeatherSubmit = async (data: WeatherInfoRequest) => {
     setWeatherLoading(true);
     try {
@@ -256,6 +310,15 @@ console.log(match)
           <AppButton variant="outlined" onClick={() => setWeatherOpen(true)}>
             Weather Info
           </AppButton>
+          <AppButton variant="contained" color="success" disabled={matchActionLoading} onClick={() => setFinishOpen(true)}>
+            Finish
+          </AppButton>
+          <AppButton variant="outlined" disabled={matchActionLoading} onClick={handlePauseMatch}>
+            Pause
+          </AppButton>
+          <AppButton variant="outlined" color="error" disabled={matchActionLoading} onClick={handleCancelMatch}>
+            Cancel
+          </AppButton>
           {match.liveMatchId ? (
             <>
               <AppButton LinkComponent={Link} to={`/live/${match.liveMatchId}`}>
@@ -281,7 +344,7 @@ console.log(match)
           </CardContent>
         </Card>
         {/* Post-Match Result */}
-        {(match.tossWinner || match.winningTeam) && (
+        {(match.tossWinner || (match.winningTeam !== null && match.winningTeam !== undefined)) && (
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -395,6 +458,36 @@ console.log(match)
         <DialogActions>
           <AppButton variant="outlined" onClick={() => setWeatherOpen(false)}>
             Close
+          </AppButton>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={finishOpen} onClose={() => setFinishOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Finish Match</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} mt={1}>
+            <FormControl fullWidth>
+              <InputLabel id="match-result-label">Result</InputLabel>
+              <Select
+                labelId="match-result-label"
+                label="Result"
+                value={finishWinner}
+                onChange={(event) => setFinishWinner(Number(event.target.value))}
+              >
+                <MenuItem value={0}>{match.teamA.teamName}</MenuItem>
+                <MenuItem value={1}>{match.teamB.teamName}</MenuItem>
+                <MenuItem value={2}>Draw</MenuItem>
+                <MenuItem value={3}>No Result</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <AppButton variant="outlined" disabled={matchActionLoading} onClick={() => setFinishOpen(false)}>
+            Close
+          </AppButton>
+          <AppButton variant="contained" disabled={matchActionLoading} onClick={handleFinishMatch}>
+            Finish Match
           </AppButton>
         </DialogActions>
       </Dialog>

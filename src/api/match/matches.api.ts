@@ -61,6 +61,26 @@ export class MatchService extends BaseApiService {
         );
     }
 
+    finishMatch(matchId: number, winner: number) {
+        return this.safeApiCall(() =>
+            axiosInstance.post<unknown, AxiosResponse<ApiResponse<string>>>(`/match/finish/${matchId}`, null, {
+                params: { winner },
+            })
+        );
+    }
+
+    pauseMatch(matchId: number) {
+        return this.safeApiCall(() =>
+            axiosInstance.post<unknown, AxiosResponse<ApiResponse<string>>>(`/match/pause/${matchId}`)
+        );
+    }
+
+    cancelMatch(matchId: number) {
+        return this.safeApiCall(() =>
+            axiosInstance.post<unknown, AxiosResponse<ApiResponse<string>>>(`/match/cancel/${matchId}`)
+        );
+    }
+
     getMatchSession(matchId: number) {
         return this.safeApiCall(() =>
             axiosInstance.get<unknown, AxiosResponse<ApiResponse<MatchSession>>>(`/matches/${matchId}/session`)

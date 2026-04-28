@@ -2,12 +2,11 @@ import {
     Box, Typography, Stack, IconButton, TextField, Button,
     Divider, CircularProgress, Alert, Paper, Chip, Select, MenuItem
 } from '@mui/material';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Add, Remove, ArrowBack, Wifi } from '@mui/icons-material';
 import oddsApi from '../../api/odds/odds.api';
 import { OddsHistoryRequest, OddsHistoryResponse } from '../../api/odds/types';
-import { useWebSocketSubscription } from '../../hooks/useWebSocketSubscription';
 import {Client} from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 
@@ -65,6 +64,7 @@ const OddsManagementView = () => {
     const [teamAName, setTeamAName] = useState('Team 1');
     const [teamBName, setTeamBName] = useState('Team 2');
     const [matchHeader, setMatchHeader] = useState('');
+    const [schedulerRunning, setSchedulerRunning] = useState(false);
 
     // useWebSocketSubscription<OddsHistoryResponse>({
     //     endpoint: process.env.REACT_APP_WEB_SOCKET_URL || 'http://localhost:8080/live-match',
@@ -111,21 +111,24 @@ const OddsManagementView = () => {
             console.log("WS RECEIVED:", data);
 
             setLiveOdds(data);
-setOdds(data)
-            // setOdds(prev => {
-            //     const exists = prev.find(o => o.id === data.id);
-            //     return exists
-            //       ? prev.map(o => o.id === data.id ? data : o)
-            //       : [data, ...prev];
-            // });
+            setOdds(prev => {
+                const exists = prev.find(o => o.id === data.id);
+                return exists
+                  ? prev.map(o => o.id === data.id ? data : o)
+                  : [data, ...prev];
+            });
         });
 
         return () => {
             disconnect && disconnect();
         };
     }, [matchId]);
-    console.log(liveOdds)
     useEffect(() => { if (matchId) load(); }, [matchId]);
+    useEffect(() => {
+        oddsApi.getSchedulerStatus()
+            .then(res => setSchedulerRunning(Boolean(res.data)))
+            .catch(() => setSchedulerRunning(false));
+    }, []);
 
     const load = async () => {
         setLoading(true);
@@ -189,32 +192,43 @@ setOdds(data)
         finally { setSaving(false); }
     };
 
+    const startScheduler = async () => {
+        if (!matchId) return;
+        const apiId = prompt("Enter API Match ID (e.g. 35499236)");
+        if (!apiId) return;
+
+        setSaving(true);
+        try {
+            await oddsApi.startScheduler(Number(matchId), apiId);
+            setSchedulerRunning(true);
+            setError(null);
+        } catch (e: any) {
+            setError(e.response?.data?.message || 'Failed to start scheduler');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const stopScheduler = async () => {
+        setSaving(true);
+        try {
+            await oddsApi.stopScheduler();
+            setSchedulerRunning(false);
+            setError(null);
+        } catch (e: any) {
+            setError(e.response?.data?.message || 'Failed to stop scheduler');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     return (
         <Box sx={{ p: 2, maxWidth: 640, mx: 'auto' }}>
             <Button
               variant="contained"
               color="success"
-              onClick={async () => {
-                  const apiId = prompt("Enter API Match ID (e.g. 35499236)");
-
-                  if (!apiId) return;
-                  const token = localStorage.getItem("authToken");
-
-                  // await fetch(`http://localhost:8080/scheduler/start?matchId=${match.id}&apiMatchId=${input}`, {
-                  //     method: "POST",
-                  //     headers: {
-                  //         "Authorization": `Bearer ${token}`,
-                  //         "Content-Type": "application/json"
-                  //     }
-                  // });
-                  await fetch(`https://criclaser.developerport.tech/scheduler/start?matchId=${matchId}&apiMatchId=${apiId}`, {
-                      method: "POST",
-                      headers: {
-                          "Authorization": `Bearer ${token}`,
-                          "Content-Type": "application/json"
-                      }
-                  });
-              }}
+              disabled={saving}
+              onClick={startScheduler}
             >
                 Start Script
             </Button>
@@ -222,20 +236,17 @@ setOdds(data)
             <Button
               variant="contained"
               color="error"
-              onClick={async () => {
-                  const token = localStorage.getItem("authToken");
-                  await fetch(`https://criclaser.developerport.tech/scheduler/stop`, {
-                      method: "POST",
-                      headers: {
-                          "Authorization": `Bearer ${token}`,
-                          "Content-Type": "application/json"
-                      }
-                  });
-                  // await fetch(`/scheduler/stop`, { method: "POST" });
-              }}
+              disabled={saving}
+              onClick={stopScheduler}
             >
                 Stop Script
             </Button>
+            <Chip
+              label={schedulerRunning ? 'Scheduler Running' : 'Scheduler Stopped'}
+              color={schedulerRunning ? 'success' : 'default'}
+              size="small"
+              sx={{ ml: 1 }}
+            />
             <Stack direction="row" alignItems="center" spacing={1} mb={1.5}>
                 <IconButton size="small" onClick={() => navigate('/odds')} sx={{ color: 'text.secondary' }}>
                     <ArrowBack fontSize="small" />
@@ -244,7 +255,7 @@ setOdds(data)
                 <Typography variant="body2" color="text.secondary">{liveOdds?.team1Min}</Typography>
                 <Typography variant="body2" color="text.secondary">{liveOdds?.team1Max}</Typography>
                 <Typography variant="body2" color="text.secondary">{liveOdds?.team2Min}</Typography>
-                <Typography variant="body2" color="text.secondary">{liveOdds?.tea21Max}</Typography>
+                <Typography variant="body2" color="text.secondary">{liveOdds?.team2Max}</Typography>
 
                 {liveOdds && <Chip icon={<Wifi />} label="Live" color="success" size="small" />}
             </Stack>

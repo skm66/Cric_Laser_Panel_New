@@ -7,6 +7,14 @@ interface Props {
   match: MatchResponse;
 }
 
+const getResultLabel = (match: MatchResponse) => {
+  if (match.winningTeam === 0) return match.teamA.teamName;
+  if (match.winningTeam === 1) return match.teamB.teamName;
+  if (match.winningTeam === 2) return "Draw";
+  if (match.winningTeam === 3) return "No Result";
+  return "";
+};
+
 const MatchResult: React.FC<Props> = ({ match }) => (
   <>
     {match.tossWinner && (
@@ -16,11 +24,11 @@ const MatchResult: React.FC<Props> = ({ match }) => (
       </Typography>
     )}
 
-    {match.winningTeam && (
+    {match.winningTeam !== null && match.winningTeam !== undefined && (
       <Box display="flex" alignItems="center" gap={1}>
         <EmojiEvents color="success" />
         <Typography variant="subtitle2">
-          Winner: <Chip label={match.winningTeam === match.teamA.teamId ? match.teamA.teamName : match.teamB.teamName} color="success" />
+          Result: <Chip label={getResultLabel(match)} color="success" />
         </Typography>
       </Box>
     )}

@@ -36,6 +36,20 @@ class OddsService {
     deleteOddsHistory(oddsId: number) {
         return axiosInstance.delete<ApiResponse<string>>(`/odds-history/${oddsId}`);
     }
+
+    startScheduler(matchId: number, apiMatchId: string) {
+        return axiosInstance.post<string>('/scheduler/start', null, {
+            params: { matchId, apiMatchId },
+        });
+    }
+
+    stopScheduler() {
+        return axiosInstance.post<string>('/scheduler/stop');
+    }
+
+    getSchedulerStatus() {
+        return axiosInstance.get<boolean>('/scheduler/status');
+    }
 }
 
 export default new OddsService();

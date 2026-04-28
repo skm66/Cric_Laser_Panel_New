@@ -22,7 +22,7 @@ export type MatchResponse = {
   venueId?: number;
   tournamentName?: string;
   matchStatus: MatchStatus;
-  winningTeam?: number;
+  winningTeam?: number | null;
   startTime: string;
   endTime?: string;
   tournamentId?: number;
@@ -30,6 +30,8 @@ export type MatchResponse = {
   groundUmpire1?: string;
   groundUmpire2?: string;
   thirdUmpire?: string;
+  teamARecentForm?: string[];
+  teamBRecentForm?: string[];
 };
 
 export type MatchStatus =
