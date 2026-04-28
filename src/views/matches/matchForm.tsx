@@ -34,9 +34,6 @@ const VALIDATE_MATCH_FORM = {
   teamBId: {
     presence: { allowEmpty: false, message: '^Team B is required' },
   },
-  venueId: {
-    presence: { allowEmpty: false, message: '^Venue is required' },
-  },
   totalOvers: {
     presence: { allowEmpty: false, message: '^Match type is required' },
     numericality: {
@@ -447,7 +444,7 @@ const CreateMatchPage: React.FC<CreateMatchPageProps> = ({ matchInfo }) => {
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Venue"
+                      label="Venue (optional)"
                       error={fieldHasError('venueId')}
                       helperText={fieldGetError('venueId') || (loadingVenuesByCountry ? 'Loading venues for selected country...' : ' ')}
                       InputProps={{
