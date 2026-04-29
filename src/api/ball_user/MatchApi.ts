@@ -15,7 +15,7 @@ class MatchApi {
     return response.data;
   }
 
-  async createMatch(payload: CreateMatchRequest): Promise<any> {
+  async createMatch(payload: CreateMatchRequest): Promise<MatchResult> {
     const response = await axiosInstance.post('/matches/live/start', payload);
     return response.data;
   }

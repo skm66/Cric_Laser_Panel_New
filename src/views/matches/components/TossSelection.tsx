@@ -26,13 +26,14 @@ import SportsBaseballIcon from "@mui/icons-material/SportsBaseball";
 import { MatchResponse } from "../../../api/match/matchResponse";
 import { TeamInfo } from "../../../api/teams/TeamRequest";
 import MatchApi from "../../../api/ball_user/MatchApi";
+import { MatchResult } from "../../../api/ball_user/types";
 import TeamSelection from "./TeamSelection";
 
 interface Props {
   match: MatchResponse;
   teamA?: TeamInfo;
   teamB?: TeamInfo;
-  onMatchStarted: () => void;
+  onMatchStarted: (liveMatch: MatchResult) => void;
 }
 
 const steps = ["Toss Selection", "Player Selection", "Review & Start"];
@@ -89,7 +90,7 @@ const TossSelection: React.FC<Props> = ({ match, teamA, teamB, onMatchStarted })
       if (!tossWinnerTeamId) throw new Error("Select Toss Winner");
       setLoading(true);
 
-      await MatchApi.createMatch({
+      const liveMatch = await MatchApi.createMatch({
         matchId: match.id,
         teamAPlayers: selectedPlayersA.map((p) => p.id),
         teamBPlayers: selectedPlayersB.map((p) => p.id),
@@ -104,7 +105,7 @@ const TossSelection: React.FC<Props> = ({ match, teamA, teamB, onMatchStarted })
         overs: match.totalOvers,
       });
 
-      onMatchStarted();
+      onMatchStarted(liveMatch);
     } catch (err: any) {
       const msg = err.response?.data?.message || err.message || "Failed to start match";
       setError(msg);

@@ -436,7 +436,17 @@ const MatchInfoPage: React.FC = () => {
             match={match}
             teamA={teamA}
             teamB={teamB}
-            onMatchStarted={() => {
+            onMatchStarted={(liveMatch) => {
+              setLiveMatchData(liveMatch);
+              setMatch((current) =>
+                current
+                  ? {
+                    ...current,
+                    liveMatchId: liveMatch.matchId,
+                    matchStatus: "IN_PROGRESS",
+                  }
+                  : current
+              );
               fetchMatch();
               setSetupOpen(false);
             }}
